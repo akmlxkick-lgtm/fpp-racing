@@ -1,197 +1,157 @@
 <!doctype html>
 <html lang="pl">
 <head>
-<meta charset="utf-8">
-<title>FPP Racing — 4 Sportowe Auta</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-:root {--bg:#000;--accent:#ffa500;--accent-dark:#ff8800;--panel:rgba(20,20,20,0.9);--muted:#666;}
-html,body {height:100%;margin:0;overflow:hidden;font-family:Inter,Arial,sans-serif;background:var(--bg);color:var(--accent);}
-#menuContainer {position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(180deg,#000 0%,#080808 100%);z-index:50;}
-h1 {font-size:56px;margin-bottom:24px;color:var(--accent);text-shadow:0 0 18px var(--accent-dark);}
-.menu-btn {padding:14px 38px;margin:8px;font-size:18px;border:2px solid var(--accent);background:transparent;color:var(--accent);border-radius:12px;cursor:pointer;transition:all 0.25s ease;}
-.menu-btn:hover {background:var(--accent);color:#000;box-shadow:0 0 18px var(--accent-dark);}
-.screen {display:none;width:100%;height:100%;position:absolute;top:0;left:0;}
-#gameContainer, #garageContainer, #storeContainer {display:none;}
-#hud {position:fixed;left:14px;top:14px;color:#fff;z-index:40;}
-.panel {background:var(--panel);padding:10px;border-radius:8px;margin-bottom:8px;color:#fff;}
-#controls {position:fixed;right:14px;top:14px;z-index:40;}
-button.small {padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#000;cursor:pointer;}
-#garageUI {position:fixed;right:20px;bottom:20px;width:340px;z-index:60;}
-.garage-panel {background:linear-gradient(180deg, rgba(30,30,30,0.95), rgba(12,12,12,0.9));padding:12px;border-radius:12px;color:#fff;margin-bottom:10px;border:1px solid rgba(255,165,0,0.08);}
-.garage-panel h3 {margin:0 0 8px 0;color:var(--accent);}
-.list {max-height:220px;overflow:auto;}
-.item {display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid rgba(255,255,255,0.03);}
-.control-row {display:flex;gap:8px;align-items:center;}
-.color-picker {width:100%;height:36px;border-radius:8px;border:0;}
-#canvas3d, #gameCanvas {width:100%;height:100%;display:block;}
-@media(max-width:900px){#garageUI{width:90%;left:5%;right:5%;}}
-</style>
+  <meta charset="utf-8">
+  <title>🏎️ FPP Racing — Menu + Garaż</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #000;
+      --accent: #ffa500;
+      --accent-dark: #ff6600;
+      --text: #fff;
+    }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+    #menu, #garage, #game {
+      position: absolute;
+      inset: 0;
+      display: none;
+    }
+    #menu.active, #garage.active, #game.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    button {
+      background: transparent;
+      border: 2px solid var(--accent);
+      color: var(--accent);
+      padding: 10px 25px;
+      margin: 8px;
+      font-size: 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    button:hover {
+      background: var(--accent);
+      color: #000;
+      box-shadow: 0 0 20px var(--accent-dark);
+    }
+    #canvas3d {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #overlay {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.6);
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+  </style>
 </head>
 <body>
+  <div id="menu" class="active">
+    <h1 style="color:var(--accent)">🏁 FPP Racing</h1>
+    <button id="startRace">Start wyścigu</button>
+    <button id="garageBtn">Garaż</button>
+    <button id="exitBtn">Wyjście</button>
+  </div>
 
-<!-- MENU -->
-<div id="menuContainer">
-<h1>🏁 FPP Racing</h1>
-<div>
-<button class="menu-btn" id="startGameBtn">Rozpocznij Wyścig</button>
-<button class="menu-btn" id="garageMenuBtn">Garaż</button>
-<button class="menu-btn" id="storeMenuBtn">Sklep</button>
-<button class="menu-btn" id="resetBtn">Resetuj dane</button>
-</div>
-<p style="color:var(--muted);margin-top:18px;">Kolorystyka: czarno-pomarańczowa • Kliknij by rozpocząć</p>
-</div>
-
-<!-- GAME -->
-<div id="gameContainer" class="screen">
-<canvas id="gameCanvas"></canvas>
-<div id="hud" style="display:none">
-<div class="panel"><strong>Saldo:</strong> <span id="money">0</span> €</div>
-</div>
-<div id="controls"><button class="small" id="backToMenuFromGame">Powrót do menu</button></div>
-</div>
-
-<!-- GARAGE -->
-<div id="garageContainer" class="screen">
-<canvas id="canvas3d"></canvas>
-<div id="garageUI">
-  <div class="garage-panel">
-    <h3>Garaż — Podgląd pojazdu</h3>
-    <div style="margin-bottom:8px">Model: <strong id="g-car-name">-</strong></div>
-    <div class="control-row">
-      <input type="color" id="carColor" class="color-picker" value="#ff3300"/>
+  <div id="garage">
+    <canvas id="canvas3d"></canvas>
+    <div id="overlay">
+      <h3>🚗 Garaż</h3>
+      <p id="status">Wczytywanie...</p>
+      <button id="backToMenu">Powrót</button>
     </div>
   </div>
-  <div class="garage-panel">
-    <h3>Modyfikacje (wydajność)</h3>
-    <label>Przyspieszenie <input type="range" id="mod-accel" min="2" max="8" step="0.1" value="5"></label>
-    <label>Prędkość maks. <input type="range" id="mod-top" min="200" max="400" step="1" value="320"></label>
+
+  <div id="game">
+    <h2 style="color:white;">🚧 Tryb wyścigu w budowie 🚧</h2>
+    <button id="backFromGame">Powrót do menu</button>
   </div>
-  <div class="garage-panel">
-    <h3>Własne samochody</h3>
-    <div class="list" id="ownedList"></div>
-    <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end">
-      <button class="small" id="equipBtn">Wyposaż</button>
-      <button class="small" id="sellBtn">Sprzedaj</button>
-    </div>
-  </div>
-  <div style="text-align:right;margin-top:6px">
-    <button class="small" id="backToMenuFromGarage">Powrót do menu</button>
-  </div>
-</div>
-</div>
 
-<!-- STORE -->
-<div id="storeContainer" class="screen">
-<div style="padding:40px;color:#fff">
-<h2 style="color:var(--accent)">Sklep — Kupuj auta</h2>
-<div id="storeList" style="margin-top:16px;max-width:1000px"></div>
-<div style="margin-top:20px"><button class="menu-btn" id="backToMenuFromStore">Powrót do menu</button></div>
-</div>
-</div>
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.156.0/build/three.module.js';
+    import { OrbitControls } from 'https://unpkg.com/three@0.156.0/examples/jsm/controls/OrbitControls.js';
+    import { GLTFLoader } from 'https://unpkg.com/three@0.156.0/examples/jsm/loaders/GLTFLoader.js';
 
-<script type="module">
-// Three.js i kontrolery
-import * as THREE from 'https://unpkg.com/three@0.156.0/build/three.module.js';
-import { OrbitControls } from 'https://unpkg.com/three@0.156.0/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader } from 'https://unpkg.com/three@0.156.0/examples/jsm/loaders/GLTFLoader.js';
-window.THREE = THREE; window.OrbitControls = OrbitControls; window.GLTFLoader = GLTFLoader;
+    const menu = document.getElementById('menu');
+    const garage = document.getElementById('garage');
+    const game = document.getElementById('game');
+    const status = document.getElementById('status');
 
-// STAN GRY
-let money = 2000;
-let ownedCars = [];
-let currentCar = null;
+    // Przycisk nawigacji
+    document.getElementById('garageBtn').onclick = () => switchScreen(garage);
+    document.getElementById('startRace').onclick = () => switchScreen(game);
+    document.getElementById('exitBtn').onclick = () => alert("Gra zamknięta (symulacja)");
+    document.getElementById('backToMenu').onclick = () => switchScreen(menu);
+    document.getElementById('backFromGame').onclick = () => switchScreen(menu);
 
-// 4 SPORTOWE AUTA
-const SHOP_CARS = [
-  { id:'car1', name:'SportCar A', price:1200, glbUrl:'models/sportcarA.glb', base:{color:'#ff0000', accel:5, top:330}},
-  { id:'car2', name:'SportCar B', price:1000, glbUrl:'models/sportcarB.glb', base:{color:'#00ff33', accel:5.2, top:320}},
-  { id:'car3', name:'SportCar C', price:1500, glbUrl:'models/sportcarC.glb', base:{color:'#0033ff', accel:4.8, top:315}},
-  { id:'car4', name:'SportCar D', price:1800, glbUrl:'models/sportcarD.glb', base:{color:'#ffa500', accel:5.5, top:340}}
-];
+    function switchScreen(screen) {
+      [menu, garage, game].forEach(s => s.classList.remove('active'));
+      screen.classList.add('active');
+    }
 
-// GARAŻ
-let gScene, gCamera, gRenderer, gControls, gCarMesh;
+    // === GARAŻ 3D ===
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);
 
-function initGarage() {
-  const canvas = document.getElementById('canvas3d');
-  gScene = new THREE.Scene();
-  gCamera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight,0.1,1000);
-  gCamera.position.set(0,2,5);
-  gRenderer = new THREE.WebGLRenderer({canvas,antialias:true});
-  gRenderer.setSize(window.innerWidth, window.innerHeight);
-  gControls = new OrbitControls(gCamera,gRenderer.domElement);
-  gControls.enableDamping = true;
-  gControls.enablePan = false;
-  gControls.update();
-  animateGarage();
-}
-function animateGarage() {
-  requestAnimationFrame(animateGarage);
-  if(gCarMesh) gCarMesh.rotation.y += 0.005;
-  gControls.update();
-  gRenderer.render(gScene,gCamera);
-}
-function clearCar() { if(gCarMesh){ gScene.remove(gCarMesh); gCarMesh=null; } }
-function loadCarModel(car) {
-  if(!car) return;
-  const loader = new GLTFLoader();
-  loader.load(car.glbUrl, gltf=>{
-    clearCar();
-    gCarMesh = gltf.scene;
-    gScene.add(gCarMesh);
-    document.getElementById('g-car-name').innerText = car.name;
-    gCarMesh.traverse(o=>{if(o.isMesh)o.material.color.set(car.base.color);});
-  });
-}
+    const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 100);
+    camera.position.set(2, 1.5, 4);
 
-// MENU I SKLEP
-function showMenu(){document.getElementById('menuContainer').style.display='flex';hideAllScreens();}
-function hideAllScreens(){document.getElementById('gameContainer').style.display='none';document.getElementById('garageContainer').style.display='none';document.getElementById('storeContainer').style.display='none';}
-function showGarage(){hideAllScreens();document.getElementById('garageContainer').style.display='block';initGarage();}
-function showStore(){hideAllScreens();document.getElementById('storeContainer').style.display='block';renderStore();}
-function renderStore(){
-  const div = document.getElementById('storeList'); div.innerHTML='';
-  SHOP_CARS.forEach(c=>{
-    const item = document.createElement('div'); item.className='item';
-    item.innerHTML=`<span>${c.name} — ${c.price} €</span><button class="small">Kup</button>`;
-    item.querySelector('button').onclick=()=>{
-      if(money>=c.price && !ownedCars.includes(c)){
-        money-=c.price; ownedCars.push(c); alert(c.name+' zakupione!'); updateHUD(); renderGarageOwned();
-      } else alert('Nie masz pieniędzy lub już posiadasz.');
-    };
-    div.appendChild(item);
-  });
-}
-function updateHUD(){document.getElementById('money').innerText=money;}
-function renderGarageOwned(){
-  const list = document.getElementById('ownedList'); list.innerHTML='';
-  ownedCars.forEach(c=>{
-    const div = document.createElement('div'); div.className='item';
-    div.innerHTML=`<span>${c.name}</span><button class="small">Wybierz</button>`;
-    div.querySelector('button').onclick=()=>{currentCar=c; loadCarModel(c);};
-    list.appendChild(div);
-  });
-}
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas3d'), antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
 
-// EVENTY
-document.getElementById('startGameBtn').onclick=()=>{hideAllScreens();document.getElementById('gameContainer').style.display='block';updateHUD();};
-document.getElementById('garageMenuBtn').onclick=showGarage;
-document.getElementById('storeMenuBtn').onclick=showStore;
-document.getElementById('resetBtn').onclick=()=>{money=2000;ownedCars=[];currentCar=null;updateHUD();renderGarageOwned();alert('Dane zresetowane');};
-document.getElementById('backToMenuFromGarage').onclick=showMenu;
-document.getElementById('backToMenuFromStore').onclick=showMenu;
-document.getElementById('backToMenuFromGame').onclick=showMenu;
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.3);
+    scene.add(hemiLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    dirLight.position.set(5, 10, 7);
+    scene.add(dirLight);
 
-// KOLOR KAROSERII
-document.getElementById('carColor').oninput=(e)=>{if(gCarMesh) gCarMesh.traverse(o=>{if(o.isMesh) o.material.color.set(e.target.value);});};
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
 
-// START
-showMenu();
-updateHUD();
-renderStore();
-renderGarageOwned();
-</script>
+    const loader = new GLTFLoader();
+    loader.load(
+      'models/car1.glb', // zmień nazwę na własną
+      (gltf) => {
+        scene.add(gltf.scene);
+        status.innerText = "Model załadowany ✅";
+      },
+      (xhr) => {
+        status.innerText = "Ładowanie: " + Math.round(xhr.loaded / xhr.total * 100) + "%";
+      },
+      (error) => {
+        status.innerText = "❌ Błąd ładowania modelu!";
+        console.error(error);
+      }
+    );
 
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+  </script>
 </body>
 </html>
